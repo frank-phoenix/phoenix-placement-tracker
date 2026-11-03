@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Phoenix Work Placement Tracker</title>
+<style>
+:root{--ink:#22223b;--pri:#ff6b35;--ok:#2a9d5c;--sel:#ffe066;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#fff3e0;color:var(--ink);min-height:100vh;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--pri);color:#fff;padding:10px 14px;font-weight:800;font-size:clamp(16px,3vw,24px)}
+header .pill{background:#fff;color:var(--ink);border-radius:30px;padding:6px 14px;border:0;font:inherit;min-height:44px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1,h2{text-align:center;font-size:clamp(26px,5vw,42px);margin:10px 0}
+.big{font-size:clamp(60px,12vw,110px);text-align:center;animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-12px) rotate(4deg)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:14px;margin:16px 0}
+.tile{position:relative;background:#fff;border:6px solid #cfd8dc;border-radius:26px;min-height:150px;padding:10px;font:inherit;font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:transform .15s}
+.tile:active{transform:scale(.93)}
+.tile .e{font-size:clamp(52px,9vw,76px);line-height:1}
+.tile.sel{background:var(--sel);border-color:var(--ok);animation:pop .4s}
+.tile.sel::after{content:"✅";position:absolute;top:4px;right:10px;font-size:34px}
+@keyframes pop{50%{transform:scale(1.12)}}
+.c0{background:#ffd6e0}.c1{background:#d0f0c0}.c2{background:#cde7ff}.c3{background:#e5d4ff}
+.nav{display:flex;gap:14px;justify-content:space-between;margin:18px 0;flex-wrap:wrap}
+.btn{flex:1;min-width:150px;min-height:80px;border:0;border-radius:40px;font:inherit;font-size:clamp(22px,4vw,32px);font-weight:900;color:#fff;background:var(--ok);cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+.btn.g{background:#546e7a}.btn.b{background:#3a86ff}.btn.o{background:var(--pri)}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.dots{display:flex;gap:8px;justify-content:center;margin:6px 0}
+.dots i{width:22px;height:22px;border-radius:50%;background:#cfd8dc}.dots i.d{background:var(--ok)}.dots i.n{background:var(--pri);transform:scale(1.3)}
+.q{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.say{font-size:34px;background:#3a86ff;color:#fff;border:0;border-radius:50%;width:70px;height:70px;cursor:pointer}
+.box{background:#fff;border-radius:24px;padding:14px 18px;margin:10px 0;font-size:clamp(20px,3vw,28px);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--sel);border-radius:30px;padding:6px 14px;margin:4px}
+.chip b{font-size:34px}
+.fall{position:fixed;top:-60px;font-size:40px;z-index:20;pointer-events:none;animation:fall 2s linear forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(540deg)}}
+.stat{text-align:center;font-size:clamp(20px,4vw,30px);font-weight:800}
+@media (prefers-reduced-motion:reduce){.big,.tile.sel{animation:none}}
+@media print{header,.nav,.noprint{display:none!important}body{background:#fff}}
+</style></head><body>
+<header><span>🔥 Phoenix Work Placement Tracker</span><span><button class="pill" id="tm">⏱ 0:00</button> <button class="pill" id="st">⭐ 0</button> <button class="pill" id="snd">🔊</button></span></header>
+<main id="app"></main>
+<script>
+// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES ======
+const SHEET_URL="https://script.google.com/macros/s/AKfycbw6lufGliJ9Wz-cnzshZsW29eh8zGAbQWPjLZ-6o52BMsJHHs29lIahhINKJkbIzPb5wQ/exec";
+// =========================================================================
+const CLASSES={"Darren’s Class (P1)":["Abdullah Al Fahim","Rahi Anan Mahboob","Tahseen Kamali","Siam Mohammed","Mely Mia","Hassan Miah","Shakil Uddin","Seayum Chowdhury","Camila Ali"],
+"Frank’s Class (P2)":["Abdul Waheed","Ayan Jama","Aysha Uddin","Ethan Sandiford","Laely Begum","Reshma Miah","Siyam Ahmed","Tavazzul Hoque","Tobechi Nwachuka","Sajil Reza"],
+"Mo’s Class (P3)":["Abu Taher","Callum Bance","Romaisa Sibous","Samad Ahmed","Tejan Coker","Yusuf Rashid","Abdulshakur Abdullah","Adam Day","Sikelele Khafula","Fatima Ilma"],
+"Elena’s Class (P4)":["Ibrahim Ahmed Kha","Chirag Sagar","Riha Akter","Francois Pollimis","Yousef Rahman","Labib Khan","Yacqoup Ali","Ibrahim Mahamud","Joe Walsh","Khadija Belal","Hajera Khanom"]};
+const ELSE=["💬","Something else"];
+const Q=[
+{k:"mood",i:"🌟",q:"How was your shift?",one:1,o:[["😊","Good"],["😐","Okay"],["😟","Difficult"]]},
+{k:"wentWell",i:"👍",q:"What went well?",o:[["🤝","I helped"],["⏰","I was on time"],["✅","I finished my job"],["👂","I listened"],["🧑‍🤝‍🧑","I worked in a team"],["😊","I was kind"],["🦺","I stayed safe"]]},
+{k:"enjoyed",i:"🏆",q:"What did you enjoy? What are you proud of?",o:[["🧹","My job"],["🙋","My team"],["☕","Break time"],["🎓","Learning new things"],["🗣️","Talking to people"],["🏆","I feel proud"]]},
+{k:"difficult",i:"😰",q:"What was difficult?",o:[["🔊","Too noisy"],["🏃","Too busy"],["🧩","Too many instructions"],["🔄","A change"],["❓","Don’t know what is next"],["😰","I felt worried"],["👍","Nothing was hard"]]},
+{k:"wouldHelp",i:"💡",q:"What could help me at work?",o:[["🪜","One step at a time"],["📋","A checklist"],["🤫","A quiet space"],["📅","Tell me about changes"],["💬","Check in with me"],["👀","Show me how"]]},
+{k:"askSupport",i:"🙋",q:"How can I ask for help?",o:[["🙋","I need help"],["👀","Can you show me?"],["🪜","One step please"],["🤫","Quiet space please"],["⏳","I need more time"],["📞","Tell my job coach"]]},
+{k:"nextKeep",i:"🌱",q:"Next shift, I want to keep…",o:[["🙋","Asking when unsure"],["📋","Using my checklist"],["😊","Being kind"],["⏰","Being on time"],["🤝","Helping others"],["💪","Trying hard"]]},
+{k:"nextTry",i:"🚀",q:"Next shift, I could try…",o:[["🔁","Asking to repeat"],["📋","Using my checklist"],["🗣️","Telling my job coach"],["🤫","Asking for quiet"],["🙋","Asking for help"],["👀","Asking to see it"]]}];
+const $=s=>document.querySelector(s);
+let S={cls:"",name:"",i:0,a:{},t0:0,snd:true,sent:null},tick;
+const stars=()=>Object.values(S.a).filter(x=>x.length).length;
+const elapsed=()=>Math.floor((Date.now()-S.t0)/1000);
+const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+function say(t){if(!S.snd||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";u.rate=.85;speechSynthesis.speak(u)}
+function burst(n=14){const em=["🎉","⭐","🌟","🔥","🎊","👏"];for(let k=0;k<n;k++){const e=document.createElement("span");e.className="fall";e.textContent=em[k%em.length];e.style.left=Math.random()*95+"vw";e.style.animationDelay=Math.random()*.5+"s";document.body.appendChild(e);setTimeout(()=>e.remove(),2800)}}
+function hdr(){$("#st").textContent="⭐ "+stars();$("#tm").textContent="⏱ "+(S.t0?fmt(elapsed()):"0:00");$("#snd").textContent=S.snd?"🔊":"🔇"}
+$("#snd").onclick=()=>{S.snd=!S.snd;if(!S.snd)speechSynthesis.cancel();hdr()};
+function head(e,t){return `<div class="big">${e}</div><div class="q"><h1>${t}</h1><button class="say" data-say="${t.replace(/"/g,"")}" aria-label="Read to me">🔊</button></div>`}
+function render(){hdr();const m=$("#app");scrollTo(0,0);
+if(!S.cls){m.innerHTML=head("🔥","Hello! Who is your teacher?")+`<div class="grid">${Object.keys(CLASSES).map((c,n)=>`<button class="tile c${n}" data-cls="${c}"><span class="e">${["🧑‍🏫","👩‍🏫","🧑‍🏫","👩‍🏫"][n]}</span>${c}</button>`).join("")}</div>`;say("Hello! Who is your teacher?");return}
+if(!S.name){m.innerHTML=head("🙋","Tap your name")+`<div class="grid">${CLASSES[S.cls].map(n=>`<button class="tile" data-name="${n}"><span class="e">🙂</span>${n}</button>`).join("")}</div><div class="nav"><button class="btn g" data-act="reset">⬅️ Back</button></div>`;say("Tap your name");return}
+if(S.i<Q.length){const q=Q[S.i],o=q.one?q.o:[...q.o,ELSE],a=S.a[q.k]||[];
+m.innerHTML=`<div class="dots">${Q.map((_,n)=>`<i class="${n<S.i?"d":n==S.i?"n":""}"></i>`).join("")}</div>`+head(q.i,q.q)+`<p class="stat">${q.one?"Tap one":"Tap all you want"} 👆</p><div class="grid">${o.map(x=>`<button class="tile ${a.includes(x[1])?"sel":""}" data-opt="${x[1]}" data-e="${x[0]}"><span class="e">${x[0]}</span>${x[1]}</button>`).join("")}</div><div class="nav"><button class="btn g" data-act="back">⬅️ Back</button><button class="btn" data-act="next">${S.i==Q.length-1?"Finish 🏁":"Next ➡️"}</button></div>`;say(q.q);return}
+summary()}
+function lines(){const E={};Q.forEach(q=>q.o.concat([ELSE]).forEach(x=>E[x[1]]=x[0]));return Q.map(q=>({q,v:(S.a[q.k]||[]).map(l=>[E[l],l])}))}
+function row(){const r={timestamp:new Date().toISOString(),date:new Date().toLocaleDateString("en-GB"),class:S.cls,student:S.name};Q.forEach(q=>r[q.k]=(S.a[q.k]||[]).join(", "));r.minutes=(elapsed()/60).toFixed(1);r.stars=stars();return r}
+function summary(){clearInterval(tick);const mood=(S.a.mood||[])[0],me={Good:"😊",Okay:"😐",Difficult:"😟"}[mood]||"🌟";
+$("#app").innerHTML=`<div class="big">🏆</div><h1>Well done, ${S.name.split(" ")[0]}!</h1><p class="stat">⭐ ${stars()} stars &nbsp; ⏱ ${fmt(elapsed())} &nbsp; ${me}</p><p class="stat noprint" id="sent">⏳ Sending…</p>`+lines().map(l=>`<div class="box"><div>${l.q.i} ${l.q.q}</div>${l.v.length?l.v.map(x=>`<span class="chip"><b>${x[0]}</b>${x[1]}</span>`).join(""):"<span>—</span>"}</div>`).join("")+`<p class="stat noprint">📸 You can take a screenshot of your work.</p><div class="nav"><button class="btn b" data-act="read">🔊 Read to me</button><button class="btn o" data-act="pdf">📄 Save as PDF</button><button class="btn g" data-act="reset">🔄 Start again</button></div>`;
+burst(40);say("Well done "+S.name.split(" ")[0]+"! You finished.");hdr();save(row())}
+// ---- Google Sheet sending (with retry queue) ----
+const mem=[];function Qget(){try{return JSON.parse(localStorage.getItem("pwtq")||"[]")}catch(e){return mem}}
+function Qset(x){try{localStorage.setItem("pwtq",JSON.stringify(x))}catch(e){mem.splice(0,mem.length,...x)}}
+async function flush(){const q=Qget(),left=[];for(const r of q){try{if(!SHEET_URL)throw 0;await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(r)})}catch(e){left.push(r)}}Qset(left);return left.length}
+async function save(r){Qset([...Qget(),r]);const n=await flush(),el=$("#sent");if(el)el.textContent=n?(SHEET_URL?"📴 Saved. Will send when online.":"⚠️ Sheet not connected yet"):"✅ Sent to my teacher!"}
+addEventListener("online",flush);flush();
+// ---- clicks ----
+$("#app").onclick=e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+if(d.say)say(d.say);
+else if(d.cls){S.cls=d.cls;burst(4);render()}
+else if(d.name){S.name=d.name;S.t0=Date.now();tick=setInterval(hdr,1000);burst(8);render()}
+else if(d.opt){const q=Q[S.i],a=S.a[q.k]||[];S.a[q.k]=q.one?[d.opt]:a.includes(d.opt)?a.filter(x=>x!=d.opt):[...a,d.opt];say(d.opt);burst(3);const before=hdr;render();if(!q.one)say(d.opt)}
+else if(d.act=="next"){S.i++;if(S.i<Q.length)burst(10);render()}
+else if(d.act=="back"){S.i=Math.max(0,S.i-1);render()}
+else if(d.act=="read"){say(lines().map(l=>l.q.q+" "+l.v.map(x=>x[1]).join(", ")).join(". "))}
+else if(d.act=="pdf"){print()}
+else if(d.act=="reset"){clearInterval(tick);speechSynthesis.cancel();S={cls:"",name:"",i:0,a:{},t0:0,snd:S.snd};render()}};
+render();
+</script></body></html>
